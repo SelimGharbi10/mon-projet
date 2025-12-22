@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: mouhareb/springboot-app:latest
+          image: selim2002/springboot-app:latest
           ports:
             - containerPort: 8089  # The port the backend listens on in docker image
 ---
