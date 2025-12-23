@@ -19,7 +19,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
-                    branches: [[name: '*/main']], // Vérifie si la branche est 'main' ou 'master'
+                    branches: [[name: '*/master']], // Vérifie si la branche est 'main' ou 'master'
                     userRemoteConfigs: [[
                         url: 'https://github.com/SelimGharbi10/mon-projet.git',
                         credentialsId: 'git-credentials' // ID du credential Jenkins pour GitHub
