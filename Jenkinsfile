@@ -2,15 +2,15 @@ pipeline {
     agent any
 
     tools {
-        jdk 'JAVA_HOME'       // adapte selon ta version dans Jenkins
-        maven 'M2_HOME'       // nom que tu as donné à Maven dans Jenkins
+        jdk 'JAVA_HOME'       // Assure-toi que ce nom correspond à celui configuré dans Jenkins
+        maven 'M2_HOME'       // Assure-toi que ce nom correspond à celui configuré dans Jenkins
     }
 
     environment {
-        SONAR_TOKEN = credentials('sonar-token')        // token SonarQube
-        DOCKERHUB_TOKEN = credentials('DOCKERHUB_TOKEN') // token Docker Hub
-        DOCKER_IMAGE = 'selim2002/springboot-app:latest'
-        KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config' // kubeconfig Jenkins
+        SONAR_TOKEN      = credentials('sonar-credentials')    // ID du credential Jenkins pour SonarQube
+        DOCKERHUB_TOKEN  = credentials('jenkins-docker')       // ID du credential Jenkins pour Docker Hub
+        DOCKER_IMAGE     = 'selim2002/tpfoyer:latest'
+        KUBECONFIG_PATH  = '/var/lib/jenkins/.kube/config'     // chemin du kubeconfig Jenkins
     }
 
     stages {
@@ -19,10 +19,10 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
-                    branches: [[name: '*/main']],
+                    branches: [[name: '*/main']], // Vérifie si la branche est 'main' ou 'master'
                     userRemoteConfigs: [[
-                        url: 'https://github.com/TON_REPO/tpfoyer.git',
-                        credentialsId: 'git-credentials'
+                        url: 'https://github.com/SelimGharbi10/mon-projet.git',
+                        credentialsId: 'git-credentials' // ID du credential Jenkins pour GitHub
                     ]]
                 ])
             }
@@ -49,7 +49,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonarqube') {
+                withSonarQubeEnv('sonarqube') { // Nom du serveur SonarQube configuré dans Jenkins
                     sh """
                     mvn sonar:sonar \
                       -Dsonar.projectKey=tpfoyer \
@@ -72,7 +72,7 @@ pipeline {
                 script {
                     sh """
                     docker build -t ${DOCKER_IMAGE} .
-                    echo $DOCKERHUB_TOKEN | docker login -u selim2002 --password-stdin
+                    echo ${DOCKERHUB_TOKEN} | docker login -u selim2002 --password-stdin
                     docker push ${DOCKER_IMAGE}
                     """
                 }
@@ -93,7 +93,7 @@ pipeline {
 
     post {
         success {
-            archiveArtifacts artifacts: 'target/*.jar'
+            archiveArtifacts artifacts: 'target/*.jar', allowEmptyArchive: true
             echo "✅ CI/CD terminé avec succès"
         }
         failure {
