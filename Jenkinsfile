@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub') // Jenkins credentials
+        DOCKERHUB_CREDENTIALS = credentials('jenkins-docker') // Jenkins credentials
         IMAGE_NAME = 'selim2002/tpfoyer:latest'
     }
 
