@@ -2,51 +2,43 @@ pipeline {
     agent any
 
     tools {
-        jdk 'JAVA_HOME'       // adapte selon ta configuration Jenkins
-        maven 'M2_HOME'       // adapte selon ta configuration Jenkins
+        jdk 'jdk17'          // ⚠️ doit exister dans Jenkins (Manage Jenkins > Tools)
+        maven 'maven3'       // ⚠️ doit exister aussi
     }
 
     environment {
-        SONAR_TOKEN      = credentials('sonar-credentials')    // token SonarQube
-        DOCKERHUB_TOKEN  = credentials('jenkins-docker')       // token Docker Hub
-        DOCKER_IMAGE     = 'selim2002/springboot-app:latest'
-        KUBECONFIG_PATH  = '/var/lib/jenkins/.kube/config'     // kubeconfig Jenkins
+        DOCKER_IMAGE = 'selim2002/springboot-app:latest'
+        KUBECONFIG   = '/var/lib/jenkins/.kube/config'
     }
 
     stages {
 
-        // -----------------------------
         stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM',
-                    branches: [[name: '*/master']], // ou main selon ton repo
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/SelimGharbi10/mon-projet.git',
-                        credentialsId: 'git-credentials'
-                    ]]
-                ])
+                git branch: 'master',
+                    url: 'https://github.com/SelimGharbi10/mon-projet.git',
+                    credentialsId: 'git-credentials'
             }
         }
 
-        stage('Clean') {
-            steps { sh "mvn clean" }
-        }
-
-        stage('Compile') {
-            steps { sh "mvn compile" }
+        stage('Clean & Compile') {
+            steps {
+                sh 'mvn clean compile'
+            }
         }
 
         stage('Unit Tests') {
             steps {
-                // Continue même si un test échoue
                 sh 'mvn test || true'
             }
         }
 
         stage('SonarQube Analysis') {
+            environment {
+                SONAR_TOKEN = credentials('sonar-credentials')
+            }
             steps {
                 withSonarQubeEnv('sonarqube') {
-                    // Continue même si l'analyse échoue
                     sh """
                     mvn sonar:sonar \
                       -Dsonar.projectKey=tpfoyer \
@@ -59,41 +51,42 @@ pipeline {
 
         stage('Package') {
             steps {
-                sh "mvn package -DskipTests"
+                sh 'mvn package -DskipTests'
             }
         }
 
         stage('Build & Push Docker Image') {
+            environment {
+                DOCKERHUB_TOKEN = credentials('jenkins-docker')
+            }
             steps {
-                script {
-                    sh """
-                    docker build -t ${DOCKER_IMAGE} .
-                    echo $DOCKERHUB_TOKEN | docker login -u selim2002 --password-stdin
-                    docker push ${DOCKER_IMAGE}
-                    """
-                }
+                sh """
+                docker build -t ${DOCKER_IMAGE} .
+                echo "${DOCKERHUB_TOKEN}" | docker login -u selim2002 --password-stdin
+                docker push ${DOCKER_IMAGE}
+                """
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
-                    sh 'kubectl apply -f backend.yaml'
-                    sh 'kubectl get pods'
-                    sh 'kubectl get svc'
-                }
+                sh """
+                export KUBECONFIG=${KUBECONFIG}
+                kubectl apply -f backend.yaml
+                kubectl get pods
+                kubectl get svc
+                """
             }
         }
     }
 
     post {
         success {
-            // Archive le JAR dans Jenkins, pas dans Git
-            archiveArtifacts artifacts: 'target/*.jar', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             echo "✅ CI/CD terminé avec succès"
         }
         failure {
-            echo "❌ Pipeline terminé avec erreurs (mais Docker/K8s exécutés si tests échoués)"
+            echo "❌ Pipeline terminé avec erreurs"
         }
     }
 }
