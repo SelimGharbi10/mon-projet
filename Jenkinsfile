@@ -24,14 +24,20 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
-            steps {
-                sh '''
-                echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                docker push selim2002/tpfoyer:latest
-                '''
-            }
+       stage('Push Docker Image') {
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'jenkins-docker',
+                                         usernameVariable: 'DOCKER_USER',
+                                         passwordVariable: 'DOCKER_PASS')]) {
+            // Connexion à Docker Hub
+            sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+            
+            // Push de l'image
+            sh 'docker push selim2002/tpfoyer:latest'
         }
+    }
+}
+
 
         stage('Deploy to Kubernetes') {
             steps {
