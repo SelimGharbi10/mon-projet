@@ -24,21 +24,23 @@ pipeline {
             }
         }
 
-     stage('Push Docker Image') {
-    steps {
-        withCredentials([string(credentialsId: 'jenkins-docker', variable: 'DOCKER_PASS')]) {
-            sh 'echo $DOCKER_PASS | docker login -u selim2002 --password-stdin'
-            sh 'docker push selim2002/tpfoyer:latest'
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([string(credentialsId: 'jenkins-docker', variable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u selim2002 --password-stdin'
+                    sh 'docker push selim2002/tpfoyer:latest'
+                }
+            }
         }
-    }
-}
 
-
-
-        withCredentials([file(credentialsId: 'kubeconfig-jenkins', variable: 'KUBECONFIG_FILE')]) {
-    sh 'export KUBECONFIG=$KUBECONFIG_FILE'
-    sh 'kubectl apply -f backend.yaml'
-}
+        stage('Deploy to Kubernetes') {   // <-- nouveau stage
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig-jenkins', variable: 'KUBECONFIG_FILE')]) {
+                    sh 'export KUBECONFIG=$KUBECONFIG_FILE'
+                    sh 'kubectl apply -f backend.yaml'
+                }
+            }
+        }
 
     }
 
