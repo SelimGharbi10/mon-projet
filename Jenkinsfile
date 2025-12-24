@@ -38,7 +38,7 @@ pipeline {
                 SONAR_TOKEN = credentials('sonar-credentials')
             }
             steps {
-                withSonarQubeEnv('sonar-credentials') {
+                withSonarQubeEnv('sq1') {
                     sh """
                     mvn sonar:sonar \
                       -Dsonar.projectKey=tpfoyer \
