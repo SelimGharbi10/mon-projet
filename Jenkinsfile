@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        jdk 'jdk17'          // ⚠️ doit exister dans Jenkins (Manage Jenkins > Tools)
-        maven 'maven3'       // ⚠️ doit exister aussi
+        jdk 'JAVA_HOME'
+        maven 'M2_HOME'
     }
 
     environment {
@@ -15,7 +15,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'master',
+                git branch: 'main',
                     url: 'https://github.com/SelimGharbi10/mon-projet.git',
                     credentialsId: 'git-credentials'
             }
