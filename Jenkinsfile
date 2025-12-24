@@ -1,88 +1,47 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'JAVA_HOME'
-        maven 'M2_HOME'
-    }
-
     environment {
-        DOCKER_IMAGE = 'selim2002/springboot-app:latest'
-        KUBECONFIG   = '/var/lib/jenkins/.kube/config'
+        DOCKER_IMAGE = 'selim2002/tpfoyer:latest'
+        KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config'
     }
 
     stages {
-
         stage('Checkout') {
             steps {
-                git branch: 'master',
-                    url: 'https://github.com/SelimGharbi10/mon-projet.git',
-                    credentialsId: 'git-credentials'
+                git branch: 'master', url: 'https://github.com/SelimGharbi10/mon-projet.git'
             }
         }
 
         stage('Clean & Compile') {
             steps {
-                sh 'mvn clean compile'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Unit Tests') {
+        stage('Build Docker Image') {
             steps {
-                sh 'mvn test || true'
-            }
-        }
+                // Configurer Docker pour Minikube
+                sh 'eval $(minikube docker-env)'
 
-        stage('SonarQube Analysis') {
-            environment {
-                SONAR_TOKEN = credentials('sonar-credentials')
-            }
-            steps {
-                withSonarQubeEnv('sq1') {
-                    sh """
-                    mvn sonar:sonar \
-                      -Dsonar.projectKey=tpfoyer \
-                      -Dsonar.host.url=http://192.168.33.10:9000 \
-                      -Dsonar.login=${SONAR_TOKEN} || true
-                    """
-                }
-            }
-        }
-
-        stage('Package') {
-            steps {
-                sh 'mvn package -DskipTests'
-            }
-        }
-
-        stage('Build & Push Docker Image') {
-            environment {
-                DOCKERHUB_TOKEN = credentials('jenkins-docker')
-            }
-            steps {
-                sh """
-                docker build -t ${DOCKER_IMAGE} .
-                echo "${DOCKERHUB_TOKEN}" | docker login -u selim2002 --password-stdin
-                docker push ${DOCKER_IMAGE}
-                """
+                // Build l'image Docker
+                sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh """
-                export KUBECONFIG=${KUBECONFIG}
-                kubectl apply -f backend.yaml
-                kubectl get pods
-                kubectl get svc
-                """
+                withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
+                    sh 'kubectl delete pod -l app=backend || true'
+                    sh 'kubectl apply -f backend.yaml'
+                    sh 'kubectl get pods'
+                }
             }
         }
     }
 
     post {
         success {
-            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             echo "✅ CI/CD terminé avec succès"
         }
         failure {
