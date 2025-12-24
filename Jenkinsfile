@@ -2,18 +2,18 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'selim2002/tpfoyer:latest'
-        KUBECONFIG_PATH = '/var/lib/jenkins/.kube/config'
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub') // Jenkins credentials
+        IMAGE_NAME = 'selim2002/tpfoyer:latest'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'master', url: 'https://github.com/SelimGharbi10/mon-projet.git'
+                git 'https://github.com/SelimGharbi10/mon-projet'
             }
         }
 
-        stage('Clean & Compile') {
+        stage('Build & Package') {
             steps {
                 sh 'mvn clean package -DskipTests'
             }
@@ -21,31 +21,23 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                // Configurer Docker pour Minikube
-                sh 'eval $(minikube docker-env)'
-
-                // Build l'image Docker
-                sh "docker build -t ${DOCKER_IMAGE} ."
+                sh "docker build -t ${IMAGE_NAME} ."
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Push Docker Image') {
             steps {
-                withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
-                    sh 'kubectl delete pod -l app=backend || true'
-                    sh 'kubectl apply -f backend.yaml'
-                    sh 'kubectl get pods'
-                }
+                sh """
+                echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                docker push ${IMAGE_NAME}
+                """
             }
         }
     }
 
     post {
-        success {
-            echo "✅ CI/CD terminé avec succès"
-        }
-        failure {
-            echo "❌ Pipeline terminé avec erreurs"
+        always {
+            echo 'Pipeline terminé'
         }
     }
 }
