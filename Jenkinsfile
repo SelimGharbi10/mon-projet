@@ -33,13 +33,11 @@ pipeline {
             }
         }
 
-       stage('Deploy to Kubernetes') {
+  stage('Deploy to Kubernetes') {
     steps {
         withCredentials([file(credentialsId: 'kubeconfig-jenkins', variable: 'KUBECONFIG_FILE')]) {
             sh '''
-                eval $(minikube -p minikube docker-env)
                 export KUBECONFIG=$KUBECONFIG_FILE
-                kubectl config use-context minikube
                 kubectl apply -f backend.yaml
             '''
         }
