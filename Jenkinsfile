@@ -16,7 +16,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/SelimGharbi10/mon-projet', branch: 'main'
+                git url: 'https://github.com/SelimGharbi10/mon-projet', branch: 'master'
                 sh 'ls -la' // vérifier la présence du Dockerfile
             }
         }
