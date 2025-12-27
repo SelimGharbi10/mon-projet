@@ -46,12 +46,13 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                withCredentials([file(credentialsId: 'kubeconfig-jenkins', variable: 'KUBECONFIG')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG
+                withCredentials([file(credentialsId: 'kubeconfig-jenkins', variable: 'KUBECONFIG_FILE')]) {
+                sh '''
+                    export KUBECONFIG=$KUBECONFIG_FILE
                     kubectl apply -f backend.yaml
-                    '''
-                }
+                '''
+}    
+
             }
         }
     }
