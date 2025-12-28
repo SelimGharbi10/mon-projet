@@ -4,7 +4,9 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('jenkins-docker') // identifiants DockerHub
         IMAGE_NAME = 'selim2002/tpfoyer:latest'
-        KUBECONFIG_FILE = credentials('kubeconfig-jenkins') // fichier kubeconfig pour Kubernetes
+        KUBECONFIG_FILE = credentials('kubeconfig-jenkins') 
+        SONAR_TOKEN=credentials('sonar-credentials') 
+    
     }
 
     tools {
@@ -33,13 +35,13 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+       stage('SonarQube Analysis') {
             steps {
-                dir('TP-Projet-2025') {
+                dir('tpfoyer') {
                     withSonarQubeEnv('sq1') {
                         sh """
                         mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
-                           -Dsonar.host.url=http://192.168.33.10:9000 \
+                          -Dsonar.host.url=http://192.168.33.10:9000 \
                           -Dsonar.login=${SONAR_TOKEN}
                         """
                     }
