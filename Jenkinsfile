@@ -33,6 +33,20 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                dir('TP-Projet-2025') {
+                    withSonarQubeEnv('sq1') {
+                        sh """
+                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                           -Dsonar.host.url=http://192.168.33.10:9000 \
+                          -Dsonar.login=${SONAR_TOKEN}
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
                 withCredentials([string(credentialsId: 'jenkins-docker', variable: 'DOCKER_PASS')]) {
