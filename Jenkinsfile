@@ -22,6 +22,15 @@ pipeline {
                 sh 'ls -la' // vérifier la présence du Dockerfile
             }
         }
+        stage('SonarQube Analysis') {
+    steps {
+        withSonarQubeEnv('sq1') {
+            // Exécute Maven directement à la racine du workspace où se trouve le pom.xml
+            sh 'mvn clean verify sonar:sonar -Dsonar.login=${SONAR_TOKEN}'
+        }
+    }
+}
+
 
         stage('Build & Package') {
             steps {
@@ -35,19 +44,7 @@ pipeline {
             }
         }
 
-       stage('SonarQube Analysis') {
-            steps {
-                dir('tpfoyer') {
-                    withSonarQubeEnv('sq1') {
-                        sh """
-                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
-                          -Dsonar.host.url=http://192.168.33.10:9000 \
-                          -Dsonar.login=${SONAR_TOKEN}
-                        """
-                    }
-                }
-            }
-        }
+       
 
         stage('Push Docker Image') {
             steps {
