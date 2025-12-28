@@ -23,17 +23,20 @@ pipeline {
             }
         }
         
-  stage('SonarQube Analysis') {
+ stage('SonarQube Analysis') {
     steps {
         withSonarQubeEnv('sq1') {
-            sh """
-            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
-                -Dsonar.login=${SONAR_TOKEN} \
-                -Dsonar.host.url=${env.SONAR_HOST_URL}
-            """
+            withCredentials([string(credentialsId: 'sonar-credentials', variable: 'SONAR_TOKEN')]) {
+                sh '''
+                mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
+                    -Dsonar.login=$SONAR_TOKEN \
+                    -Dsonar.host.url=$SONAR_HOST_URL
+                '''
+            }
         }
     }
 }
+
 
 
 
