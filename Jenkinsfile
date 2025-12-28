@@ -23,10 +23,9 @@ pipeline {
             }
         }
         
-     stage('SonarQube Analysis') {
+  stage('SonarQube Analysis') {
     steps {
         withSonarQubeEnv('sq1') {
-            // Utilisation de la syntaxe complète du plugin pour éviter NoPluginFoundForPrefixException
             sh """
             mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar \
                 -Dsonar.login=${SONAR_TOKEN} \
